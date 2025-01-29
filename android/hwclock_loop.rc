@@ -1,0 +1,10 @@
+on boot
+	start hwclock_loop
+
+# we're on a vm, might as well
+service hwclock_loop /system/bin/hwclock_loop
+    disabled
+    oneshot
+    user root
+    group root
+    seclabel u:r:su:s0

@@ -1,0 +1,12 @@
+# has to be earlier than health hal
+on early-boot
+	start uhid_fake_battery
+
+# battery monitor has to be patched to accept a hid battery, or alternatively patch the kernel to not label the battery as scoped
+# https://cs.android.com/android/platform/superproject/+/android-11.0.0_r48:system/core/healthd/BatteryMonitor.cpp;l=563
+service uhid_fake_battery /system/bin/uhid_fake_battery
+    disabled
+    oneshot
+    user root
+    group root
+    seclabel u:r:su:s0
