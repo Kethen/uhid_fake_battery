@@ -41,6 +41,7 @@ struct context {
 	pthread_mutex_t *fd_mutex;
 	uint8_t battery_level;
 	uint8_t charging;
+	uint16_t port;
 };
 
 void send_data(struct context *ctx){
@@ -126,7 +127,7 @@ void *data_thread(void *args){
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	addr.sin_port = htons(7777); 
+	addr.sin_port = htons(ctx->port);
 
 	ret = bind(tcp_sock, (struct sockaddr*)&addr, sizeof(addr));
 	if(ret != 0){
@@ -139,6 +140,8 @@ void *data_thread(void *args){
 		LOG("failed setting tcp socket to passive, %d, terminating\n", errno);
 		exit(1);
 	}
+
+	LOG("listening on tcp port %u\n", ctx->port);
 
 	do{
 		int con_sock = accept(tcp_sock, (struct sockaddr*)NULL, NULL);
@@ -229,7 +232,7 @@ void *incoming_thread(void *args){
 	return NULL;
 }
 
-void start_uhid_threads(){
+void start_uhid_threads(struct context *ctx){
 	int fd = open("/dev/uhid", O_RDWR);
 	if(fd < 0){
 		LOG("failed opening /dev/uhid, %d\n", errno);
@@ -238,6 +241,9 @@ void start_uhid_threads(){
 
 	pthread_mutex_t fd_mutex;
 	pthread_mutex_init(&fd_mutex, NULL);
+
+	ctx->fd = fd;
+	ctx->fd_mutex = &fd_mutex;
 
 	#if 0
 	uint8_t rd[] = {
@@ -303,13 +309,6 @@ void start_uhid_threads(){
 		exit(1);
 	}
 
-	struct context ctx = {
-		.fd = fd,
-		.fd_mutex = &fd_mutex,
-		.battery_level = 0x32,
-		.charging = 0
-	};
-
 	struct uhid_event incoming_event;
 	do{
 		ret = read(fd, (void *)&incoming_event, sizeof(incoming_event));
@@ -333,17 +332,17 @@ void start_uhid_threads(){
 		exit(1);
 	}
 
-	LOG("begin, dev_flags 0x%016x\n", incoming_event.u.start.dev_flags);
+	LOG("uhid begin, dev_flags 0x%016x\n", incoming_event.u.start.dev_flags);
 
 	pthread_t dt;
-	ret = pthread_create(&dt, NULL, data_thread, &ctx);
+	ret = pthread_create(&dt, NULL, data_thread, ctx);
 	if(ret != 0){
 		LOG("failed creating data thread, %d, terminating\n", ret);
 		exit(1);
 	}
 
 	pthread_t it;
-	ret = pthread_create(&dt, NULL, incoming_thread, &ctx);
+	ret = pthread_create(&dt, NULL, incoming_thread, ctx);
 	if(ret != 0){
 		LOG("failed creating incoming thread, %d, terminating\n", ret);
 		exit(1);
@@ -353,7 +352,31 @@ void start_uhid_threads(){
 	pthread_join(it, NULL);
 }
 
-int main(){
+void print_usage(const char *path){
+	LOG("usage: %s [tcp port number]\n", path);
+}
+
+int main(int argc, const char **argv){
+	struct context ctx = {
+		.battery_level = 0x32,
+		.charging = 0,
+		.port = 7777
+	};
+
+	if(argc > 2){
+		print_usage(argv[0]);
+		exit(1);
+	}
+
+	if(argc == 2){
+		int input = atoi(argv[1]);
+		if(input == 0){
+			print_usage(argv[0]);
+			exit(1);
+		}
+		ctx.port = input;
+	}
+
 	pthread_mutex_init(&log_mutex, NULL);
-	start_uhid_threads();
+	start_uhid_threads(&ctx);
 }
