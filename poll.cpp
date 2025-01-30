@@ -67,7 +67,7 @@ int main(int argc, const char **argv){
 		v4_bytes[0] = input[0];
 		v4_bytes[1] = input[1];
 		v4_bytes[2] = input[2];
-		v4_bytes[3] = input[2];
+		v4_bytes[3] = input[3];
 	}
 
 	if(argc >= 5){
