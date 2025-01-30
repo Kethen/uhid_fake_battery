@@ -245,11 +245,12 @@ void start_uhid_threads(struct context *ctx){
 	ctx->fd = fd;
 	ctx->fd_mutex = &fd_mutex;
 
-	#if 0
 	uint8_t rd[] = {
-		0x05, 0x85, // Usage Page (Battery System)
-		0x09, 0x02, // Usage (Smart Battery Battery Status)
-		0xA1, 0x01, //   Collection (Application)
+		// minimal battery device
+		0x05, 0x84, // Usage Page (Power)
+		0x09, 0x10, // Usage (Battery System)
+		0xA1, 0x00, //   Collection (Physical)
+		0x05, 0x85, //     Usage Page (Battery System)
 		0x09, 0x65, //     Usage (Absolute State Of Charge)
 		0x15, 0x00, //     Logical Minimum (0)
 		0x25, 0x64, //     Logical Maximum (100)
@@ -259,31 +260,23 @@ void start_uhid_threads(struct context *ctx){
 		0x09, 0x44, //     Usage (Charging)
 		0x15, 0x00, //     Logical Minimum (0)
 		0x25, 0x64, //     Logical Maximum (1)
-		0x75, 0x08, //     Report Size (8)
+		0x75, 0x08, //     Report Size (7)
 		0x95, 0x01, //     Report Count (1)
 		0x81, 0x02, //     Input (Data,Var,Abs)
-		0xC0 //         End Collection
-	};
-	#else
-	uint8_t rd[] = {
+		0xC0, //         End Collection
+
+		// force input device driver
 		0x05, 0x0d, // Usage Page (Digitizer)
 		0x09, 0x02, // Usage (Pen)
 		0xA1, 0x01, //   Collection (Application)
-		0x09, 0x3B, //     Usage (Battery Strength)
-		0x15, 0x00, //     Logical Minimum (0)
-		0x25, 0x64, //     Logical Maximum (100)
-		0x75, 0x08, //     Report Size (8)
-		0x95, 0x01, //     Report Count (1)
-		0x81, 0x02, //     Input (Data,Var,Abs)
 		0x09, 0xB1, //     Usage (Unknown)
 		0x15, 0x00, //     Logical Minimum (0)
 		0x25, 0x64, //     Logical Maximum (1)
-		0x75, 0x08, //     Report Size (8)
+		0x75, 0x08, //     Report Size (1)
 		0x95, 0x01, //     Report Count (1)
 		0x81, 0x02, //     Input (Data,Var,Abs)
-		0xC0 //         End Collection
+		0xC0, //         End Collection
 	};
-	#endif
 
 	struct uhid_event create_event = {
 		.type = UHID_CREATE2,
