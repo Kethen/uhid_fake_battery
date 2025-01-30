@@ -63,7 +63,7 @@ int main(int argc, const char **argv){
 
 	if(argc >= 4){
 		unsigned int input[4];
-		sscanf(argv[3], "%u.%u.%u.%u", &input, &input[1], &input[2], &input[3]);
+		sscanf(argv[3], "%u.%u.%u.%u", input, &input[1], &input[2], &input[3]);
 		v4_bytes[0] = input[0];
 		v4_bytes[1] = input[1];
 		v4_bytes[2] = input[2];
