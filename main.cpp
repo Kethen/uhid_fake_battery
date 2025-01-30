@@ -42,6 +42,7 @@ struct context {
 	uint8_t battery_level;
 	uint8_t charging;
 	uint16_t port;
+	uint32_t ipv4;
 };
 
 void send_data(struct context *ctx){
@@ -126,8 +127,12 @@ void *data_thread(void *args){
 
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	addr.sin_addr.s_addr = ctx->ipv4;
 	addr.sin_port = htons(ctx->port);
+
+	uint8_t *ipv4_bytes = (uint8_t *)&ctx->ipv4;
+
+	LOG("binding tcp socket to %u.%u.%u.%u:%u\n", ipv4_bytes[0], ipv4_bytes[1], ipv4_bytes[2], ipv4_bytes[3], ctx->port);
 
 	ret = bind(tcp_sock, (struct sockaddr*)&addr, sizeof(addr));
 	if(ret != 0){
@@ -140,8 +145,6 @@ void *data_thread(void *args){
 		LOG("failed setting tcp socket to passive, %d, terminating\n", errno);
 		exit(1);
 	}
-
-	LOG("listening on tcp port %u\n", ctx->port);
 
 	do{
 		int con_sock = accept(tcp_sock, (struct sockaddr*)NULL, NULL);
@@ -346,23 +349,34 @@ void start_uhid_threads(struct context *ctx){
 }
 
 void print_usage(const char *path){
-	LOG("usage: %s [tcp port number]\n", path);
+	LOG("usage: %s [ipv4] [tcp port number]\n", path);
 }
 
 int main(int argc, const char **argv){
 	struct context ctx = {
 		.battery_level = 0x32,
 		.charging = 0,
-		.port = 7777
+		.port = 7777,
+		.ipv4 = htonl(INADDR_ANY),
 	};
 
-	if(argc > 2){
+	if(argc > 3){
 		print_usage(argv[0]);
 		exit(1);
 	}
 
-	if(argc == 2){
-		int input = atoi(argv[1]);
+	if(argc >= 2){
+		unsigned int input[4];
+		sscanf(argv[1], "%u.%u.%u.%u", input, &input[1], &input[2], &input[3]);
+		uint8_t *ipv4_bytes = (uint8_t *)&ctx.ipv4;
+		ipv4_bytes[0] = input[0];
+		ipv4_bytes[1] = input[1];
+		ipv4_bytes[2] = input[2];
+		ipv4_bytes[3] = input[3];
+	}
+
+	if(argc >= 3){
+		int input = atoi(argv[2]);
 		if(input == 0){
 			print_usage(argv[0]);
 			exit(1);

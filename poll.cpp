@@ -32,7 +32,7 @@ void read_from_file(const char *path, char *buf, size_t buf_size){
 }
 
 void print_usage(const char *path){
-	LOG("usage: %s [battery level file path] [charger online file path] [ip] [port]\n", path);
+	LOG("usage: %s [battery level file path] [charger online file path] [ipv4] [port]\n", path);
 }
 
 int main(int argc, const char **argv){
